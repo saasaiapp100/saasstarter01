@@ -128,6 +128,60 @@ export type TeamDataWithMembers = Team & {
   })[];
 };
 
+export const customers = pgTable('customers', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }),
+  address: text('address'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const customerInteractions = pgTable('customer_interactions', {
+  id: serial('id').primaryKey(),
+  customerId: integer('customer_id')
+    .notNull()
+    .references(() => customers.id),
+  userId: integer('user_id')
+    .notNull()
+    .references(() => users.id),
+  type: varchar('type', { length: 50 }).notNull(), // e.g., 'call', 'email', 'meeting'
+  notes: text('notes'),
+  interactionDate: timestamp('interaction_date').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [customers.teamId],
+    references: [teams.id],
+  }),
+  interactions: many(customerInteractions),
+}));
+
+export const customerInteractionsRelations = relations(
+  customerInteractions,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [customerInteractions.customerId],
+      references: [customers.id],
+    }),
+    user: one(users, {
+      fields: [customerInteractions.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+export type CustomerInteraction = typeof customerInteractions.$inferSelect;
+export type NewCustomerInteraction = typeof customerInteractions.$inferInsert;
+
 export enum ActivityType {
   SIGN_UP = 'SIGN_UP',
   SIGN_IN = 'SIGN_IN',

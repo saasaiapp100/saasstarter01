@@ -1,6 +1,15 @@
 import { desc, and, eq, isNull } from 'drizzle-orm';
 import { db } from './drizzle';
-import { activityLogs, teamMembers, teams, users } from './schema';
+import {
+  activityLogs,
+  teamMembers,
+  teams,
+  users,
+  customers,
+  customerInteractions,
+  NewCustomer,
+  NewCustomerInteraction,
+} from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 
@@ -127,4 +136,46 @@ export async function getTeamForUser() {
   });
 
   return result?.team || null;
+}
+
+export async function getCustomersForTeam(teamId: number) {
+  const teamCustomers = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.teamId, teamId))
+    .orderBy(desc(customers.createdAt));
+  return teamCustomers;
+}
+
+export async function createCustomer(data: NewCustomer) {
+  const [newCustomer] = await db.insert(customers).values(data).returning();
+  return newCustomer;
+}
+
+export async function getCustomerDetails(customerId: number) {
+  const details = await db.query.customers.findFirst({
+    where: eq(customers.id, customerId),
+    with: {
+      interactions: {
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: desc(customerInteractions.createdAt),
+      },
+    },
+  });
+  return details;
+}
+
+export async function createCustomerInteraction(data: NewCustomerInteraction) {
+  const [newInteraction] = await db
+    .insert(customerInteractions)
+    .values(data)
+    .returning();
+  return newInteraction;
 }
