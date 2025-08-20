@@ -114,28 +114,35 @@ export async function getTeamForUser() {
     return null;
   }
 
-  const result = await db.query.teamMembers.findFirst({
+  const teamMembership = await db.query.teamMembers.findFirst({
     where: eq(teamMembers.userId, user.id),
-    with: {
-      team: {
-        with: {
-          teamMembers: {
-            with: {
-              user: {
-                columns: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    columns: {
+      teamId: true,
+    },
   });
 
-  return result?.team || null;
+  if (!teamMembership) {
+    return null;
+  }
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamMembership.teamId),
+    with: {
+      teamMembers: {
+        with: {
+          user: {
+            columns: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return team || null;
 }
 
 export async function getCustomersForTeam(teamId: number) {
