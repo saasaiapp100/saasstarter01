@@ -10,7 +10,7 @@ import {
   CardFooter
 } from '@/components/ui/card';
 import { customerPortalAction } from '@/lib/payments/actions';
-import { useActionState } from 'react';
+import { useState, useTransition } from 'react';
 import { TeamDataWithMembers, User } from '@/lib/db/schema';
 import { removeTeamMember, inviteTeamMember } from '@/app/(login)/actions';
 import useSWR from 'swr';
@@ -95,10 +95,17 @@ function TeamMembersSkeleton() {
 
 function TeamMembers() {
   const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
-  const [removeState, removeAction, isRemovePending] = useActionState<
-    ActionState,
-    FormData
-  >(removeTeamMember, {});
+  const [removeState, setRemoveState] = useState<ActionState>({});
+  const [isRemovePending, startRemoveTransition] = useTransition();
+
+  const removeAction = (formData: FormData) => {
+    startRemoveTransition(async () => {
+      const result = await removeTeamMember(removeState, formData);
+      if (result) {
+        setRemoveState(result);
+      }
+    });
+  };
 
   const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
     return user.name || user.email || 'Unknown User';
@@ -190,10 +197,17 @@ function InviteTeamMemberSkeleton() {
 function InviteTeamMember() {
   const { data: user } = useSWR<User>('/api/user', fetcher);
   const isOwner = user?.role === 'owner';
-  const [inviteState, inviteAction, isInvitePending] = useActionState<
-    ActionState,
-    FormData
-  >(inviteTeamMember, {});
+  const [inviteState, setInviteState] = useState<ActionState>({});
+  const [isInvitePending, startInviteTransition] = useTransition();
+
+  const inviteAction = (formData: FormData) => {
+    startInviteTransition(async () => {
+      const result = await inviteTeamMember(inviteState, formData);
+      if (result) {
+        setInviteState(result);
+      }
+    });
+  };
 
   return (
     <Card>

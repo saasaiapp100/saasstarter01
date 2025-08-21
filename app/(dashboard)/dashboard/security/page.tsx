@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Lock, Trash2, Loader2 } from 'lucide-react';
-import { useActionState } from 'react';
+import { useState, useTransition } from 'react';
 import { updatePassword, deleteAccount } from '@/app/(login)/actions';
 
 type PasswordState = {
@@ -23,15 +23,29 @@ type DeleteState = {
 };
 
 export default function SecurityPage() {
-  const [passwordState, passwordAction, isPasswordPending] = useActionState<
-    PasswordState,
-    FormData
-  >(updatePassword, {});
+  const [passwordState, setPasswordState] = useState<PasswordState>({});
+  const [isPasswordPending, startPasswordTransition] = useTransition();
 
-  const [deleteState, deleteAction, isDeletePending] = useActionState<
-    DeleteState,
-    FormData
-  >(deleteAccount, {});
+  const passwordAction = (formData: FormData) => {
+    startPasswordTransition(async () => {
+      const result = await updatePassword(passwordState, formData);
+      if (result) {
+        setPasswordState(result);
+      }
+    });
+  };
+
+  const [deleteState, setDeleteState] = useState<DeleteState>({});
+  const [isDeletePending, startDeleteTransition] = useTransition();
+
+  const deleteAction = (formData: FormData) => {
+    startDeleteTransition(async () => {
+      const result = await deleteAccount(deleteState, formData);
+      if (result) {
+        setDeleteState(result);
+      }
+    });
+  };
 
   return (
     <section className="flex-1 p-4 lg:p-8">
