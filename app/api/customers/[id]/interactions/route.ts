@@ -1,10 +1,10 @@
+import { NextRequest } from 'next/server';
 import { getUser, createCustomerInteraction } from '@/lib/db/queries';
 import { NewCustomerInteraction } from '@/lib/db/schema';
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+type RouteContext = { params: { id: string } };
+
+export async function POST(request: NextRequest, { params }: RouteContext) {
   const user = await getUser();
   if (!user) {
     return new Response('Unauthorized', { status: 401 });
@@ -15,12 +15,12 @@ export async function POST(
     return new Response('Invalid customer ID', { status: 400 });
   }
 
-  const { customerId: _, ...interactionData } = await request.json();
+  const data = await request.json();
 
   const newInteraction: NewCustomerInteraction = {
-    ...interactionData,
+    ...data,
     customerId,
-    userId: user.id,
+    userId: user.id
   };
 
   const interaction = await createCustomerInteraction(newInteraction);
