@@ -15,10 +15,10 @@ export async function POST(
     return new Response('Invalid customer ID', { status: 400 });
   }
 
-  const data = await request.json();
+  const { customerId: _, ...interactionData } = await request.json();
 
   const newInteraction: NewCustomerInteraction = {
-    ...data,
+    ...interactionData,
     customerId,
     userId: user.id,
   };
